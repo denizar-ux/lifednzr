@@ -36,7 +36,8 @@ window._fbGet = get;
 window._fbOnValue = onValue;
 window._fbRoot = ROOT;
 window._fbReady = true;
-setTimeout(function(){ window.dispatchEvent(new Event('fbReady')); }, 0);
+// Use longer delay to ensure DOMContentLoaded listeners are registered first
+setTimeout(function(){ window.dispatchEvent(new Event('fbReady')); }, 500);
 </script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -1409,7 +1410,7 @@ function delWork(type, id){
     if(type==='schedule') D.schedule=D.schedule.filter(function(x){ return x.id!==id; });
     else if(type==='shoot') D.shoots=D.shoots.filter(function(x){ return x.id!==id; });
     else if(type==='edit') D.editQueue=D.editQueue.filter(function(x){ return x.id!==id; });
-    renderWork();
+    renderWork(); fbSave();
   });
 }
 
@@ -1951,6 +1952,7 @@ function saveInv(){
   if(!d.client){ alert('Masukkan nama client!'); return; }
   D.invoices.push({id:d.no, cl:d.client, jml:d.total, dt:d.date, st:'unpaid'});
   renderInv();
+  fbSave();
   document.getElementById('if_no').value='INV-'+pad3(D.invoices.length+1);
   showPdfStatus('✅ Invoice disimpan ke tracker!','var(--green2)','var(--green)');
 }
@@ -3421,14 +3423,18 @@ window.addEventListener('DOMContentLoaded', function(){
     doInitWithFirebase();
   }, {once: true});
 
-  if(window._fbReady){
-    doInitWithFirebase();
-    return;
-  }
-
-  setTimeout(function(){
-    doInitWithoutFirebase();
-  }, 8000);
+  // Poll for _fbReady flag in case the event fired before this listener was added
+  var pollCount = 0;
+  var poll = setInterval(function(){
+    pollCount++;
+    if(window._fbReady){
+      clearInterval(poll);
+      doInitWithFirebase();
+    } else if(pollCount > 80){ // 8 seconds timeout
+      clearInterval(poll);
+      doInitWithoutFirebase();
+    }
+  }, 100);
 });
 
 </script>
