@@ -2659,49 +2659,57 @@ function gv(id){ var el=document.getElementById(id); return el?el.value.trim():'
 // ════════════════════════════════════
 var _fbSaveTimer = null;
 
+function _fbWriteNow(){
+  if(!window._fbDb || !window._fbRef || !window._fbSet) return;
+  var ROOT = window._fbRoot || 'lifeos';
+  var payload = {
+    contents: D.contents || [],
+    tasks: D.tasks || [],
+    goals: D.goals || [],
+    projects: D.projects || [],
+    invoices: D.invoices || [],
+    clients: D.clients || [],
+    notes: D.notes || [],
+    schedule: D.schedule || [],
+    shoots: D.shoots || [],
+    workTasks: D.workTasks || [],
+    editQueue: D.editQueue || [],
+    customPlatforms: D.customPlatforms || [],
+    cData: D.cData || {},
+    weddingDate: D.weddingDate || '',
+    chalStart: D.chalStart || '',
+    chalEnd: D.chalEnd || ''
+  };
+  try {
+    window._fbSet(window._fbRef(window._fbDb, ROOT+'/data'), payload)
+      .then(function(){ showSyncStatus('✓ Tersimpan'); console.log('fbSave OK contents:', payload.contents.length); })
+      .catch(function(err){ showSyncStatus('⚠ Gagal: '+err.message, true); console.error('fbSave failed:', err); });
+  } catch(err) {
+    console.error('fbSave error:', err);
+  }
+}
+
 function fbSave(){
   if(!window._fbDb || !window._fbRef || !window._fbSet){
-    setTimeout(function(){ fbSave(); }, 1500);
+    setTimeout(function(){ fbSave(); }, 1000);
     return;
   }
   clearTimeout(_fbSaveTimer);
-  _fbSaveTimer = setTimeout(function(){
-    var db = window._fbDb;
-    var fbRef = window._fbRef;
-    var fbSet = window._fbSet;
-    var ROOT = window._fbRoot || 'lifeos';
-    try {
-      fbSet(fbRef(db, ROOT+'/data'), {
-        contents: D.contents,
-        tasks: D.tasks,
-        goals: D.goals,
-        projects: D.projects,
-        invoices: D.invoices,
-        clients: D.clients,
-        notes: D.notes,
-        schedule: D.schedule,
-        shoots: D.shoots,
-        workTasks: D.workTasks||[],
-        editQueue: D.editQueue,
-        customPlatforms: D.customPlatforms||[],
-        cData: D.cData,
-        weddingDate: D.weddingDate,
-        chalStart: D.chalStart,
-        chalEnd: D.chalEnd
-      }).then(function(){
-        showSyncStatus('✓ Tersimpan');
-      }).catch(function(err){
-        showSyncStatus('⚠ Gagal: '+err.message, true);
-        console.error('fbSave failed:', err);
-      });
-    } catch(err) {
-      console.error('fbSave error:', err);
-    }
-  }, 800);
+  // Debounce 150ms saja — cukup batch rapid calls, tidak hilang saat refresh cepat
+  _fbSaveTimer = setTimeout(_fbWriteNow, 150);
 }
 
+// Simpan LANGSUNG saat user switch tab / refresh / close — jangan sampai debounce ke-cancel
+document.addEventListener('visibilitychange', function(){
+  if(document.visibilityState === 'hidden'){
+    clearTimeout(_fbSaveTimer);
+    _fbSaveTimer = null;
+    _fbWriteNow();
+  }
+});
+
 function fbLoad(cb){
-  if(!window._fbReady){ cb(false); return; }
+  if(!window._fbReady || !window._fbDb){ cb(false); return; }
   var db = window._fbDb;
   var fbRef = window._fbRef;
   var fbGet = window._fbGet;
@@ -2710,11 +2718,12 @@ function fbLoad(cb){
   // Firebase converts JS arrays to objects {0:{...},1:{...}} — convert back
   function toArr(val){
     if(!val) return [];
-    if(Array.isArray(val)) return val;
+    if(Array.isArray(val)) return val.filter(function(v){ return v != null; });
     if(typeof val === 'object'){
       return Object.keys(val)
         .sort(function(a,b){ return Number(a)-Number(b); })
-        .map(function(k){ return val[k]; });
+        .map(function(k){ return val[k]; })
+        .filter(function(v){ return v != null; });
     }
     return [];
   }
@@ -2722,7 +2731,7 @@ function fbLoad(cb){
   fbGet(fbRef(db, ROOT+'/data')).then(function(snapshot){
     if(snapshot.exists()){
       var saved = snapshot.val();
-      console.log('Firebase loaded keys:', Object.keys(saved).join(', '));
+      console.log('Firebase loaded — keys:', Object.keys(saved).join(', '));
       D.contents        = toArr(saved.contents);
       D.tasks           = toArr(saved.tasks);
       D.goals           = toArr(saved.goals);
@@ -2739,8 +2748,10 @@ function fbLoad(cb){
       if(saved.weddingDate) D.weddingDate = saved.weddingDate;
       if(saved.chalStart)   D.chalStart   = saved.chalStart;
       if(saved.chalEnd)     D.chalEnd     = saved.chalEnd;
+      console.log('Loaded contents:', D.contents.length, '| projects:', D.projects.length, '| tasks:', D.tasks.length);
       cb(true);
     } else {
+      console.log('Firebase: no data found at', ROOT+'/data');
       cb(false);
     }
   }).catch(function(err){
