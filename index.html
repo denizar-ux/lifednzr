@@ -506,9 +506,6 @@ tr:hover .row-acts{opacity:1;}
     <div class="sb-item active" data-hub="overview" onclick="nav('overview',this)">
       <div class="sb-dot" style="background:var(--t3)"></div>Overview
     </div>
-    Creator
-      <span class="sb-cnt" id="sb-cc">0</span>
-    </div>
     <div class="sb-item" data-hub="work" onclick="nav('work',this)">
       <div class="sb-dot" style="background:var(--purple)"></div>Work
     </div>
@@ -3507,9 +3504,6 @@ function showSyncStatus(msg, isErr){
 // ════════════════════════════════════
 window.addEventListener('DOMContentLoaded', function(){
   var inited = false;
-  // Show UI immediately (empty state) while Firebase loads
-  setDate();
-  renderOverview();
 
   function doInitWithFirebase(){
     if(inited) return;
