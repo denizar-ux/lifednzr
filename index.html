@@ -577,6 +577,47 @@ tr:hover .row-acts{opacity:1;}
       </div>
     </div>
 
+    <!-- WORK HUB -->
+    <div class="panel" id="hub-work">
+      <!-- Work sub-tabs -->
+      <div class="vsw" style="padding:10px 20px 0">
+        <div class="vbtn active" onclick="wTab('jadwal',this)">🏢 Jadwal</div>
+        <div class="vbtn" onclick="wTab('editing',this)">🎬 Editing</div>
+        <div class="vbtn" onclick="wTab('tasks',this)">✅ Tasks</div>
+      </div>
+
+      <!-- Jadwal -->
+      <div id="wv-jadwal" class="pa">
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <div class="clbl" style="margin-bottom:0">Jadwal Minggu Ini</div>
+            <button class="ia" onclick="openAddSchedule()">+ Hari</button>
+          </div>
+          <div id="workSchedule"></div>
+        </div>
+      </div>
+
+      <!-- Editing Queue -->
+      <div id="wv-editing" class="pa" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div class="clbl" style="margin-bottom:0">Editing Queue</div>
+          <button class="ia" onclick="openAddEdit()">+ Video</button>
+        </div>
+        <div id="editQueue"></div>
+      </div>
+
+      <!-- Task List -->
+      <div id="wv-tasks" class="pa" style="display:none">
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <div class="clbl" style="margin-bottom:0">Task List</div>
+            <button class="ia" onclick="openAddWorkTask()">+ Task</button>
+          </div>
+          <div id="workTaskList"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- FREELANCE HUB -->
     <div class="panel" id="hub-freelance">
       <div class="pa">
@@ -657,8 +698,8 @@ tr:hover .row-acts{opacity:1;}
         <button class="ia" onclick="openAddFlEdit()">+ Video</button>
       </div>
       <div id="flEditQueue"></div>
-    </div></div>
-      </div>
+    </div>
+    </div>
     </div>
 
     <!-- PERSONAL HUB -->
@@ -741,46 +782,7 @@ tr:hover .row-acts{opacity:1;}
       </div>
     </div>
 
-    <!-- WORK HUB -->
-    <div class="panel" id="hub-work">
-      <!-- Work sub-tabs -->
-      <div class="vsw" style="padding:10px 20px 0">
-        <div class="vbtn active" onclick="wTab('jadwal',this)">🏢 Jadwal</div>
-        <div class="vbtn" onclick="wTab('editing',this)">🎬 Editing</div>
-        <div class="vbtn" onclick="wTab('tasks',this)">✅ Tasks</div>
-      </div>
 
-      <!-- Jadwal -->
-      <div id="wv-jadwal" class="pa">
-        <div class="card">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-            <div class="clbl" style="margin-bottom:0">Jadwal Minggu Ini</div>
-            <button class="ia" onclick="openAddSchedule()">+ Hari</button>
-          </div>
-          <div id="workSchedule"></div>
-        </div>
-      </div>
-
-      <!-- Editing Queue -->
-      <div id="wv-editing" class="pa" style="display:none">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-          <div class="clbl" style="margin-bottom:0">Editing Queue</div>
-          <button class="ia" onclick="openAddEdit()">+ Video</button>
-        </div>
-        <div id="editQueue"></div>
-      </div>
-
-      <!-- Task List -->
-      <div id="wv-tasks" class="pa" style="display:none">
-        <div class="card">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-            <div class="clbl" style="margin-bottom:0">Task List</div>
-            <button class="ia" onclick="openAddWorkTask()">+ Task</button>
-          </div>
-          <div id="workTaskList"></div>
-        </div>
-      </div>
-    </div>
 
   </div><!-- /page -->
 </div><!-- /main -->
@@ -1017,7 +1019,17 @@ function wTab(tab, el){
 }
 
 function renderWork(){
-  renderSchedule(); renderEditQueue(); renderWorkTasks();
+  // Ensure jadwal tab is active by default
+  var jadwalTab = document.querySelector('#hub-work .vsw .vbtn');
+  if(jadwalTab){
+    document.querySelectorAll('#hub-work .vsw .vbtn').forEach(function(b){ b.classList.remove('active'); });
+    jadwalTab.classList.add('active');
+  }
+  ['jadwal','editing','tasks'].forEach(function(t){
+    var v = document.getElementById('wv-'+t);
+    if(v) v.style.display = t==='jadwal' ? 'block' : 'none';
+  });
+  renderSchedule(); renderWorkTasks();
 }
 
 function renderSchedule(){
@@ -2526,6 +2538,8 @@ function submitM(){
     if(eid){ var fx=D.flEditQueue.find(function(x){ return x.id===eid; }); fx.title=ftitle; fx.status=fstatus; fx.deadline=fdeadline; fx.project=fproject; fx.note=fnote; }
     else D.flEditQueue.push({id:Date.now(),project:fproject,title:ftitle,status:fstatus,deadline:fdeadline,note:fnote});
     renderFlEditQueue();
+    fbSave();
+    closeM();
 
 }else if(ctx==='chalDates'){
     var s=gv('mi_cs'), en=gv('mi_ce');
@@ -2615,13 +2629,21 @@ var FL_EQ_COLS=[
 ];
 
 function renderFlEditQueue(){
+  var FL_EQ_COLS=[
+    {k:'list-edit',l:'List Edit',c:'var(--t3)'},
+    {k:'editing',l:'Editing',c:'var(--orange)'},
+    {k:'preview',l:'Preview',c:'var(--blue)'},
+    {k:'revisi',l:'Revisi',c:'var(--acc)'},
+    {k:'done',l:'Done',c:'var(--green)'}
+  ];
   var el=document.getElementById('flEditQueue');
   if(!el) return;
-  if(!D.flEditQueue||!D.flEditQueue.length){
+  if(!D.flEditQueue.length){
     el.innerHTML='<div style="padding:8px 0;color:var(--t4);font-size:13px">Queue kosong</div>';
     return;
   }
   D.flEditQueue.forEach(function(v){
+    if(v.status==='review') v.status='preview';
     var valid=FL_EQ_COLS.find(function(c){ return c.k===v.status; });
     if(!valid) v.status='list-edit';
   });
@@ -2632,21 +2654,22 @@ function renderFlEditQueue(){
         +'<div style="font-size:10px;font-weight:700;color:'+col.c+';text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;padding:0 2px">'+col.l+' <span style="color:var(--t4);font-weight:400">('+cards.length+')</span></div>'
         +'<div class="fleq-kol-body" data-col="'+col.k+'" style="background:var(--bg2);border-radius:8px;padding:5px;min-height:60px">'
         +cards.map(function(v){
-          return '<div class="fleq-kcard" data-id="'+v.id+'" data-col="'+col.k+'" style="background:var(--white);border:1.5px solid var(--b1);border-radius:6px;padding:7px 8px;margin-bottom:4px;touch-action:none;user-select:none;cursor:grab" onclick="flEqPreview('+v.id+')" onpointerdown="flEqPointerDown(event,'+v.id+')">'
+          return '<div class="fleq-kcard" data-id="'+v.id+'" data-col="'+col.k+'" style="background:var(--white);border:1.5px solid var(--b1);border-radius:6px;padding:7px 8px;margin-bottom:4px;touch-action:none;user-select:none;cursor:grab" onclick="flEqPreview("+v.id+")" onpointerdown="flEqPointerDown(event,'+v.id+')">'
             +'<div style="font-size:12px;font-weight:500;color:var(--t1);margin-bottom:2px;line-height:1.3">'+e(v.title)+'</div>'
             +(v.project?'<div style="font-size:10px;color:var(--t3)">'+e(v.project)+'</div>':'')
             +(v.deadline?'<div style="font-size:10px;color:var(--t4);margin-top:1px">'+fd(v.deadline)+'</div>':'')
             +(v.note?'<div style="font-size:10px;color:var(--t3);margin-top:3px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+e(v.note)+'</div>':'')
-            +'<div style="display:flex;gap:3px;margin-top:5px">'
-            +'<button class="ia" style="font-size:10px" onpointerdown="event.stopPropagation()" onclick="event.stopPropagation();editFlEditItem('+v.id+')">✏️</button>'
-            +'<button class="ia del" style="font-size:10px" onpointerdown="event.stopPropagation()" onclick="event.stopPropagation();delFlEdit('+v.id+')">🗑</button>'
-            +'</div></div>';
+            +'</div>';
         }).join('')
         +'<div class="fleq-drop-zone" data-col="'+col.k+'" style="min-height:12px;border-radius:6px;transition:all .1s"></div>'
         +'</div></div>';
     }).join('')
     +'</div>';
 }
+
+var _eqDrag={active:false,id:null,ghost:null};
+
+var _eqDetailId = null;
 
 function flEqPreview(id){
   if(_flEqDrag.active) return;
@@ -2837,7 +2860,15 @@ function fbLoad(cb){
       D.workTasks       = toArr(saved.workTasks);
       D.editQueue       = toArr(saved.editQueue);
       D.customPlatforms = toArr(saved.customPlatforms);
-      if(saved.cData && typeof saved.cData === 'object') D.cData = saved.cData;
+      if(saved.cData && typeof saved.cData === 'object'){
+        D.cData = saved.cData;
+        // Migrate old string format to new object format
+        Object.keys(D.cData).forEach(function(k){
+          if(typeof D.cData[k] === 'string'){
+            D.cData[k] = {st: D.cData[k], act:'', ref:''};
+          }
+        });
+      }
       if(saved.weddingDate) D.weddingDate = saved.weddingDate;
       if(saved.chalStart)   D.chalStart   = saved.chalStart;
       if(saved.chalEnd)     D.chalEnd     = saved.chalEnd;
