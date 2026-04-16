@@ -625,7 +625,6 @@ tr:hover .row-acts{opacity:1;}
           <div class="vbtn active" onclick="fvs(this,'vf-proj')">📁 Projects</div>
           <div class="vbtn" onclick="fvs(this,'vf-inv')">🧾 Invoice</div>
           <div class="vbtn" onclick="fvs(this,'vf-cli')">👤 Clients</div>
-          <div class="vbtn" onclick="fvs(this,'vf-notes')">📝 Notes</div>
           <div class="vbtn" onclick="fvs(this,'vf-fledit')">🎬 Editing</div>
         </div>
 
@@ -691,7 +690,7 @@ tr:hover .row-acts{opacity:1;}
         </div>
 
         <div id="vf-cli" style="display:none"><div class="g3" id="cliGrid"></div></div>
-        <div id="vf-notes" style="display:none"><div class="g2" id="notesGrid"></div>
+    
     <div id="vf-fledit" style="display:none">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
         <div class="clbl" style="margin-bottom:0">Editing Queue</div>
@@ -1442,7 +1441,7 @@ function nav(hub, el){
 function fvs(tab, vid){
   tab.closest('.vsw-fl').querySelectorAll('.vbtn').forEach(function(t){ t.classList.remove('active'); });
   tab.classList.add('active');
-  ['vf-proj','vf-inv','vf-cli','vf-notes','vf-fledit'].forEach(function(id){
+  ['vf-proj','vf-inv','vf-cli','vf-fledit'].forEach(function(id){
     var el=document.getElementById(id);
     if(el) el.style.display='none';
   });
